@@ -37,14 +37,59 @@ function init() {
     scene.background = texture;
     scene.environment = texture;
 
-    for (let i = 0; i < 30; i++) {
-      addCube(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5);
-    }
+    // for (let i = 0; i < 30; i++) {
+    //   addCube(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5);
+    // }
 
-    // const quaternion = new THREE.Quaternion();
-    // quaternion.setFromAxisAngle(new THREE.Vector3(2, 10, 3), Math.PI);
-    // const cube = addCube(10, 2, 2);
-    // cube.applyQuaternion(quaternion);
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 1), Math.PI);
+    const cube = addCube(2, 2, 2);
+    cube.applyQuaternion(quaternion);
+
+    // create a global audio source
+    const fftSize = 512;
+    // let analyser;
+    const listener = new THREE.AudioListener();
+    camera.add(listener);
+    const audio = new THREE.Audio(listener);
+
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load("./src/babyshark.mp3", function (buffer) {
+      audio.setBuffer(buffer);
+      audio.setLoop(true);
+      audio.setVolume(0.5);
+      setTimeout(() => {
+        audio.play();
+      }, 1000);
+    });
+    const analyser = new THREE.AudioAnalyser(audio, fftSize);
+    // Make the cube pulse
+    const pulse = () => {
+      const data = analyser.getFrequencyData();
+      const average = data.reduce((a, b) => a + b) / data.length;
+      cube.scale.set(1 + average / 100, 1 + average / 100, 1 + average / 100);
+      requestAnimationFrame(pulse);
+    };
+    pulse();
+
+    // const sound = new THREE.Audio(listener);
+    // const context = listener.context;
+    // const src = context.createMediaElementSource(listener);
+    // analyser = context.createAnalyser();
+    // src.connect(analyser);
+    // analyser.connect(context.destination);
+    // analyser.fftSize = 512;
+    // var bufferLength = analyser.frequencyBinCount;
+    // dataArray = new Uint8Array(bufferLength);
+
+    // load a sound and set it as the Audio object's buffer
+    // const audioLoader = new THREE.AudioLoader();
+    // audioLoader.load("src/babyshark.mp3", function (buffer) {
+    //   sound.setBuffer(buffer);
+    //   sound.setLoop(true);
+    //   sound.setVolume(0.5);
+    //   sound.play();
+    // });
 
     // const loader = new GLTFLoader().setPath("/public/");
     // loader.load("tentacule.gltf", (gltf) => {
@@ -133,55 +178,55 @@ function animate() {
   requestAnimationFrame(animate);
 
   // make each cube move in a random direction
-  cubes.forEach(({ cube, direction }: any, index: number) => {
-    cube.position.x += direction.x * (index + 5) * 0.05;
-    cube.position.y += direction.y * (index + 5) * 0.05;
-    cube.position.z += direction.z * (index + 5) * 0.05;
+  // cubes.forEach(({ cube, direction }: any, index: number) => {
+  //   cube.position.x += direction.x * (index + 5) * 0.05;
+  //   cube.position.y += direction.y * (index + 5) * 0.05;
+  //   cube.position.z += direction.z * (index + 5) * 0.05;
 
-    cubes.forEach(({ cube: cube2 }: any, index2: number) => {
-      if (index !== index2) {
-        const box1 = new THREE.Box3().setFromObject(cube);
-        const box2 = new THREE.Box3().setFromObject(cube2);
+  //   cubes.forEach(({ cube: cube2 }: any, index2: number) => {
+  //     if (index !== index2) {
+  //       const box1 = new THREE.Box3().setFromObject(cube);
+  //       const box2 = new THREE.Box3().setFromObject(cube2);
 
-        if (box1.intersectsBox(box2)) {
-          console.log("collision");
+  //       if (box1.intersectsBox(box2)) {
+  //         console.log("collision");
 
-          // make the cube rebondir on the other cube according to the angle of collision
-          const angle = Math.atan2(
-            cube.position.y - cube2.position.y,
-            cube.position.x - cube2.position.x
-          );
-          const angle2 = Math.atan2(
-            cube.position.z - cube2.position.z,
-            cube.position.x - cube2.position.x
-          );
-          const angle3 = Math.atan2(
-            cube.position.y - cube2.position.y,
-            cube.position.z - cube2.position.z
-          );
-          cube.position.x = cube2.position.x + Math.cos(angle) * 1.1;
-          cube.position.y = cube2.position.y + Math.sin(angle2) * 1.1;
-          cube.position.z = cube2.position.z + Math.sin(angle3) * 1.1;
-        }
-      }
-    });
+  //         // make the cube rebondir on the other cube according to the angle of collision
+  //         const angle = Math.atan2(
+  //           cube.position.y - cube2.position.y,
+  //           cube.position.x - cube2.position.x
+  //         );
+  //         const angle2 = Math.atan2(
+  //           cube.position.z - cube2.position.z,
+  //           cube.position.x - cube2.position.x
+  //         );
+  //         const angle3 = Math.atan2(
+  //           cube.position.y - cube2.position.y,
+  //           cube.position.z - cube2.position.z
+  //         );
+  //         cube.position.x = cube2.position.x + Math.cos(angle) * 1.1;
+  //         cube.position.y = cube2.position.y + Math.sin(angle2) * 1.1;
+  //         cube.position.z = cube2.position.z + Math.sin(angle3) * 1.1;
+  //       }
+  //     }
+  //   });
 
-    // if the cube is out of the screen, put it back in the screen
-    if (
-      cube.position.x > 10 ||
-      cube.position.x < -10 ||
-      cube.position.y > 10 ||
-      cube.position.y < -10 ||
-      cube.position.z > 10 ||
-      cube.position.z < -10
-    ) {
-      console.log("out of screen", cube.position.x, cube.position.y, cube.position.z);
-      // make the cube stay in the screen
-      direction.x = -direction.x;
-      direction.y = -direction.y;
-      direction.z = -direction.z;
-    }
-  });
+  //   // if the cube is out of the screen, put it back in the screen
+  //   if (
+  //     cube.position.x > 10 ||
+  //     cube.position.x < -10 ||
+  //     cube.position.y > 10 ||
+  //     cube.position.y < -10 ||
+  //     cube.position.z > 10 ||
+  //     cube.position.z < -10
+  //   ) {
+  //     console.log("out of screen", cube.position.x, cube.position.y, cube.position.z);
+  //     // make the cube stay in the screen
+  //     direction.x = -direction.x;
+  //     direction.y = -direction.y;
+  //     direction.z = -direction.z;
+  //   }
+  // });
 
   // bones.forEach((tent: any, tentNb: number) => {
   //   const dephase = ((tentNb + 1) / 8 + 20) / 30;
